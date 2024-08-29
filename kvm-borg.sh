@@ -51,7 +51,7 @@ remove_lock() {
 BORG_REPO=$1
 VM_NAME=$2
 BACKUP_TMP_DIR=/tmp/kvm_backup
-EXCLUDE_LIST=() # Add VM names to exclude here
+EXCLUDE_LIST=( backup rfx3d thebutler ) # Add VM names to exclude here
 
 # Borg settings
 export BORG_PASSPHRASE='your_borg_passphrase'
@@ -77,14 +77,15 @@ backup_vm() {
 
     # Correctly parse both file and block disks
     while IFS= read -r line; do
-        if [[ -n "$line" ]]; then
+        # Skip lines that are empty or have "-"
+        if [[ -n "$line" && "$line" != "-" ]]; then
             if [[ "$line" == /dev/* ]]; then
                 block_disks+=("$line")
             else
                 disks+=("$line")
             fi
         fi
-    done < <(virsh domblklist "${vm}" | head -n -1 | tail -n +3 | cut -c11- )
+    done < <(virsh domblklist "${vm}" | tail -n +3 | awk '{print $2}')
 
     log "Dumping XML configuration for VM: $vm"
     mkdir -p "$BACKUP_TMP_DIR"
@@ -106,7 +107,7 @@ backup_vm() {
         "${xml_file}" "${disks[@]/#/}"
 
     log "Pruning old backups for VM: $vm"
-    borg prune --list --glob-archives "${vm}-*" --show-rc "${PRUNE_KEEP}" "${BORG_REPO}"
+    borg prune --list --glob-archives "${vm}-*" --show-rc ${PRUNE_KEEP} "${BORG_REPO}"
 
     # Clean up temporary files
     rm -f "${xml_file}"
