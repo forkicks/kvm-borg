@@ -51,10 +51,10 @@ remove_lock() {
 BORG_REPO=$1
 VM_NAME=$2
 BACKUP_TMP_DIR=/tmp/kvm_backup
-EXCLUDE_LIST=( backup rfx3d thebutler ) # Add VM names to exclude here
+EXCLUDE_LIST=( ) # Add VM names to exclude here, space separated
 
 # Borg settings
-export BORG_PASSPHRASE='your_borg_passphrase'
+export BORG_PASSPHRASE='your_borg_passphrase' # if the repo does not use encryption, this is ignored
 BORG_ENCRYPTION_METHOD="repokey-blake2"
 PRUNE_KEEP="--keep-daily 7 --keep-weekly 4 --keep-monthly 6"
 COMP='zstd,5'
