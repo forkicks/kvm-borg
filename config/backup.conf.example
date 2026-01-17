@@ -1,0 +1,194 @@
+# =============================================================================
+# KVM-BORG BACKUP CONFIGURATION
+# =============================================================================
+#
+# Copy this file to one of:
+#   - /etc/kvm-borg/backup.conf (recommended for production)
+#   - config/backup.conf (relative to repository)
+#
+# All settings can be overridden by environment variables with the same name.
+#
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# BORG REPOSITORY PATHS
+# -----------------------------------------------------------------------------
+
+# Local Borg repository for system backups
+BORG_REPO_SYSTEM="/backup/system"
+
+# Local Borg repository for VM backups
+BORG_REPO_VMS="/backup/kvm"
+
+# Remote backup settings (leave empty to disable remote backup)
+# Format: "ssh://user@host/path" or "user@host:/path"
+REMOTE_HOST=""
+REMOTE_BORG_REPO_SYSTEM=""
+REMOTE_BORG_REPO_VMS=""
+
+# Example remote configuration:
+# REMOTE_HOST="192.168.0.207"
+# REMOTE_BORG_REPO_SYSTEM="ssh://192.168.0.207/pool8tb/datasets/borgrepo"
+# REMOTE_BORG_REPO_VMS="ssh://192.168.0.207/pool8tb/datasets/kvmrepo"
+
+# -----------------------------------------------------------------------------
+# BORG SETTINGS
+# -----------------------------------------------------------------------------
+
+# Borg passphrase (for encrypted repositories)
+# WARNING: Storing plaintext passphrases is a security risk!
+# Consider using BORG_PASSCOMMAND instead:
+#   export BORG_PASSCOMMAND="cat /root/.borg-passphrase"
+#   export BORG_PASSCOMMAND="pass show backup/borg"
+BORG_PASSPHRASE=""
+
+# Path to borg binary (leave empty to auto-detect)
+BORG_BINARY=""
+
+# Compression algorithm
+# Options: none, lz4 (fast), zstd (balanced), zstd,5 (better compression), zlib (slow)
+BORG_COMPRESSION_SYSTEM="lz4"
+BORG_COMPRESSION_VMS="zstd,5"
+
+# Prune settings - how many backups to keep
+# Format: "--keep-daily N --keep-weekly N --keep-monthly N"
+BORG_PRUNE_KEEP="--keep-daily 7 --keep-weekly 4 --keep-monthly 6"
+
+# SSH optimization for Borg transfers
+# Uses AES-NI acceleration (aes128-gcm) and disables SSH compression
+# since Borg already handles compression
+BORG_RSH="ssh -c aes128-gcm@openssh.com -o Compression=no -x"
+
+# Encryption method for new repositories (used by backup-vms.sh if creating repos)
+BORG_ENCRYPTION_METHOD="repokey-blake2"
+
+# -----------------------------------------------------------------------------
+# REMOTE BACKUP STATE TRACKING
+# -----------------------------------------------------------------------------
+
+# Directory to store remote backup state files
+REMOTE_STATE_DIR="/var/lib/backup-state"
+
+# Number of days before warning about stale remote backups
+REMOTE_STALE_DAYS=14
+
+# -----------------------------------------------------------------------------
+# VM BACKUP SETTINGS
+# -----------------------------------------------------------------------------
+
+# Temporary directory for VM metadata during backup
+BACKUP_TMP_DIR="/tmp/kvm_backup"
+
+# VMs to exclude from backup (space-separated array)
+# Example: VM_EXCLUDE_LIST=("template-vm" "test-vm")
+VM_EXCLUDE_LIST=()
+
+# -----------------------------------------------------------------------------
+# SYSTEM BACKUP - SERVICE MANAGEMENT
+# -----------------------------------------------------------------------------
+
+# Systemd services (containers) to stop before backup and restart after
+# These should be services that need to be stopped to ensure consistent backups
+# Example: CONTAINERS=("mariadb" "gitea" "plex")
+CONTAINERS=()
+
+# Services that need a delayed start after other services
+# These will be started after a 30-second delay to allow dependencies to stabilize
+# Example: CONTAINERS_DELAYED_START=("jellyfin" "mediascraper")
+CONTAINERS_DELAYED_START=()
+
+# Pre-backup command (e.g., database dump)
+# This runs after CONTAINERS[0] is stopped but before other containers
+# Example: PRE_BACKUP_COMMAND="/usr/local/bin/backup-database.sh"
+PRE_BACKUP_COMMAND=""
+
+# Service that must remain running for pre-backup command (e.g., database)
+# This service will be stopped AFTER the pre-backup command completes
+# Example: PRE_BACKUP_SERVICE="mariadb"
+PRE_BACKUP_SERVICE=""
+
+# -----------------------------------------------------------------------------
+# SYSTEM BACKUP - EXCLUDES
+# -----------------------------------------------------------------------------
+
+# Standard system paths to exclude from backup
+# These are typically virtual filesystems, caches, and temporary files
+SYSTEM_EXCLUDES=(
+    "/mnt"
+    "/proc"
+    "/sys"
+    "/dev"
+    "/run"
+    "/tmp"
+    "/var/tmp"
+    "/var/run"
+    "/var/cache"
+)
+
+# Custom excludes specific to your system
+# Add paths that should not be backed up
+# Example:
+# CUSTOM_EXCLUDES=(
+#     "/virtualmachines"
+#     "/var/log/audit"
+#     "/home/*/Downloads"
+# )
+CUSTOM_EXCLUDES=()
+
+# -----------------------------------------------------------------------------
+# DATABASE BACKUP SETTINGS
+# -----------------------------------------------------------------------------
+
+# Database type: "mysql", "mariadb", "postgresql", or empty to disable
+DB_TYPE=""
+
+# Database connection settings
+DB_HOST="localhost"
+DB_PORT=""                            # Leave empty for default (3306/5432)
+DB_USER=""
+DB_NAME=""
+
+# Path to file containing database password (more secure than plaintext)
+# The file should contain only the password, no newline
+# Example: DB_PASSWORD_FILE="/root/.db-password"
+DB_PASSWORD_FILE=""
+
+# Directory to store database backups
+DB_BACKUP_DIR="/backup/database"
+
+# File prefix for database backups
+DB_BACKUP_PREFIX="db-backup"
+
+# Number of backup versions to keep locally
+DB_BACKUP_KEEP=3
+
+# Remote settings for database backup sync
+DB_REMOTE_HOST=""
+DB_REMOTE_BACKUP_DIR=""
+
+# -----------------------------------------------------------------------------
+# LOGGING
+# -----------------------------------------------------------------------------
+
+# Log file for system backup operations
+LOG_FILE_SYSTEM="/var/log/backup-system.log"
+
+# Log file for VM backup operations
+LOG_FILE_VMS="/var/log/backup-vms.log"
+
+# Log file for database backup operations
+LOG_FILE_DATABASE="/var/log/backup-database.log"
+
+# -----------------------------------------------------------------------------
+# LOCK FILES
+# -----------------------------------------------------------------------------
+
+# Lock file to prevent concurrent system backups
+LOCK_FILE_SYSTEM="/var/run/backup-system.lock"
+
+# Lock file to prevent concurrent VM backups
+LOCK_FILE_VMS="/var/run/backup-vms.lock"
+
+# =============================================================================
+# END OF CONFIGURATION
+# =============================================================================

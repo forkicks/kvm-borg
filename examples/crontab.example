@@ -1,0 +1,85 @@
+# =============================================================================
+# KVM-BORG CRONTAB EXAMPLE
+# =============================================================================
+#
+# Copy this file to /etc/cron.d/kvm-borg or add entries to root's crontab.
+#
+# Installation:
+#   sudo cp examples/crontab.example /etc/cron.d/kvm-borg
+#   sudo chmod 644 /etc/cron.d/kvm-borg
+#
+# Or add to root crontab:
+#   sudo crontab -e
+#
+# NOTE: Adjust paths to match your installation location.
+#
+# =============================================================================
+
+# Environment variables
+SHELL=/bin/bash
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+MAILTO=root
+
+# -----------------------------------------------------------------------------
+# Backup Schedule
+# -----------------------------------------------------------------------------
+
+# System backup - Daily at 3:00 AM
+# This backs up the entire filesystem (excluding configured paths)
+0 3 * * * root /opt/kvm-borg/scripts/backup-system.sh >> /var/log/backup-system.log 2>&1
+
+# VM backup - Weekly on Sunday at 4:00 AM
+# This backs up all KVM virtual machines
+0 4 * * 0 root /opt/kvm-borg/scripts/backup-vms.sh >> /var/log/backup-vms.log 2>&1
+
+# Database backup - Daily at 2:30 AM
+# This backs up configured databases (MySQL/PostgreSQL)
+# Runs before system backup so DB dump is included
+30 2 * * * root /opt/kvm-borg/scripts/backup-database.sh >> /var/log/backup-database.log 2>&1
+
+# -----------------------------------------------------------------------------
+# Alternative Schedules
+# -----------------------------------------------------------------------------
+
+# Option: Combined system + VM backup (runs VMs after system backup)
+# 0 3 * * * root /opt/kvm-borg/scripts/backup-system.sh --with-vms >> /var/log/backup.log 2>&1
+
+# Option: Staggered VM backups (different VMs on different days)
+# 0 4 * * 1 root /opt/kvm-borg/scripts/backup-vms.sh /backup/kvm vm1 >> /var/log/backup-vms.log 2>&1
+# 0 4 * * 3 root /opt/kvm-borg/scripts/backup-vms.sh /backup/kvm vm2 >> /var/log/backup-vms.log 2>&1
+# 0 4 * * 5 root /opt/kvm-borg/scripts/backup-vms.sh /backup/kvm vm3 >> /var/log/backup-vms.log 2>&1
+
+# Option: Hourly database backups (for critical databases)
+# 0 * * * * root /opt/kvm-borg/scripts/backup-database.sh >> /var/log/backup-database.log 2>&1
+
+# -----------------------------------------------------------------------------
+# Log Rotation
+# -----------------------------------------------------------------------------
+
+# Rotate backup logs weekly (add to /etc/logrotate.d/kvm-borg instead)
+# Or use a simple log truncation:
+# 0 0 * * 0 root tail -n 10000 /var/log/backup-system.log > /var/log/backup-system.log.tmp && mv /var/log/backup-system.log.tmp /var/log/backup-system.log
+
+# =============================================================================
+# NOTES
+# =============================================================================
+#
+# Cron field format:
+#   minute hour day-of-month month day-of-week command
+#
+# Special strings:
+#   @reboot    Run once at startup
+#   @yearly    Run once a year (0 0 1 1 *)
+#   @monthly   Run once a month (0 0 1 * *)
+#   @weekly    Run once a week (0 0 * * 0)
+#   @daily     Run once a day (0 0 * * *)
+#   @hourly    Run once an hour (0 * * * *)
+#
+# Examples:
+#   0 3 * * *     Every day at 3:00 AM
+#   0 3 * * 0     Every Sunday at 3:00 AM
+#   0 3 1 * *     First day of every month at 3:00 AM
+#   */15 * * * *  Every 15 minutes
+#   0 3 * * 1-5   Every weekday at 3:00 AM
+#
+# =============================================================================
