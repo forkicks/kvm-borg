@@ -108,6 +108,7 @@ backup_mysql() {
 
     if [ "$DRY_RUN" = true ]; then
         log "[DRY-RUN] Would run: mysqldump -u $DB_USER -h $DB_HOST $DB_NAME > $backup_path"
+        echo "$backup_path"
         return 0
     fi
 
@@ -142,6 +143,7 @@ backup_postgresql() {
 
     if [ "$DRY_RUN" = true ]; then
         log "[DRY-RUN] Would run: pg_dump -U $DB_USER -h $DB_HOST $DB_NAME > $backup_path"
+        echo "$backup_path"
         return 0
     fi
 
@@ -246,14 +248,15 @@ fi
 
 # Generate timestamp
 TIMESTAMP=$(get_compact_timestamp)
+BACKUP_PATH="${DB_BACKUP_DIR}/${DB_BACKUP_PREFIX}-${TIMESTAMP}.sql"
 
 # Perform backup based on database type
 case "${DB_TYPE,,}" in
     mysql|mariadb)
-        BACKUP_PATH=$(backup_mysql "$TIMESTAMP")
+        backup_mysql "$TIMESTAMP" >/dev/null
         ;;
     postgresql|postgres|pgsql)
-        BACKUP_PATH=$(backup_postgresql "$TIMESTAMP")
+        backup_postgresql "$TIMESTAMP" >/dev/null
         ;;
     *)
         error "Unsupported database type: $DB_TYPE (supported: mysql, mariadb, postgresql)"
@@ -263,7 +266,7 @@ esac
 # Compress backup
 if [ "$DRY_RUN" = true ]; then
     log "[DRY-RUN] Would compress: $BACKUP_PATH"
-    BACKUP_PATH="${DB_BACKUP_DIR}/${DB_BACKUP_PREFIX}-${TIMESTAMP}.sql.gz"
+    BACKUP_PATH="${BACKUP_PATH}.gz"
 else
     if [ -n "$BACKUP_PATH" ] && [ -f "$BACKUP_PATH" ]; then
         log "Compressing database dump..."

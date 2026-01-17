@@ -50,9 +50,9 @@ load_config() {
 # Logging Functions
 # -----------------------------------------------------------------------------
 
-# Log a message with timestamp
+# Log a message with timestamp (to stderr so it's not captured by $())
 log() {
-    echo "$(date +"%Y-%m-%d %H:%M:%S") - $1"
+    echo "$(date +"%Y-%m-%d %H:%M:%S") - $1" >&2
 }
 
 # Log a warning message
