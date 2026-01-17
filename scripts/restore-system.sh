@@ -30,8 +30,8 @@
 
 set -e
 
-# Script location
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# Script location (resolve symlinks to find actual script directory)
+SCRIPT_DIR="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" && pwd)"
 CONFIG_DIR="$SCRIPT_DIR/../config"
 HOSTS_DIR="$CONFIG_DIR/hosts"
 
