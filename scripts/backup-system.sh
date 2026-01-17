@@ -110,9 +110,11 @@ declare -A container_status
 check_container_states() {
     log "Checking container states..."
     for container in "${CONTAINERS[@]:-}"; do
+        [[ -z "$container" ]] && continue
         container_status[$container]=$(systemctl is-active "$container" 2>/dev/null || echo "inactive")
     done
     for container in "${CONTAINERS_DELAYED_START[@]:-}"; do
+        [[ -z "$container" ]] && continue
         container_status[$container]=$(systemctl is-active "$container" 2>/dev/null || echo "inactive")
     done
 }
@@ -124,11 +126,13 @@ restore_services() {
     # Get list of delayed-start containers for filtering
     local delayed_containers=()
     for c in "${CONTAINERS_DELAYED_START[@]:-}"; do
+        [[ -z "$c" ]] && continue
         delayed_containers+=("$c")
     done
 
     # Start all containers except delayed-start ones first
     for container in "${CONTAINERS[@]:-}"; do
+        [[ -z "$container" ]] && continue
         if [ "${container_status[$container]:-}" = "active" ]; then
             # Check if this is a delayed-start container
             if ! in_array "$container" "${delayed_containers[@]:-}"; then
@@ -145,6 +149,7 @@ restore_services() {
     # Wait and start delayed-start containers
     local has_delayed=false
     for container in "${CONTAINERS_DELAYED_START[@]:-}"; do
+        [[ -z "$container" ]] && continue
         if [ "${container_status[$container]:-}" = "active" ]; then
             has_delayed=true
             break
@@ -160,6 +165,7 @@ restore_services() {
         fi
 
         for container in "${CONTAINERS_DELAYED_START[@]:-}"; do
+            [[ -z "$container" ]] && continue
             if [ "${container_status[$container]:-}" = "active" ]; then
                 if [ "$DRY_RUN" = true ]; then
                     log "[DRY-RUN] Would start $container service (delayed)"
@@ -178,6 +184,7 @@ restore_services() {
 stop_services() {
     log "Stopping containers..."
     for container in "${CONTAINERS[@]:-}"; do
+        [[ -z "$container" ]] && continue
         if [ "${container_status[$container]:-}" = "active" ]; then
             if [ "$DRY_RUN" = true ]; then
                 log "[DRY-RUN] Would stop $container service"
@@ -188,6 +195,7 @@ stop_services() {
         fi
     done
     for container in "${CONTAINERS_DELAYED_START[@]:-}"; do
+        [[ -z "$container" ]] && continue
         if [ "${container_status[$container]:-}" = "active" ]; then
             if [ "$DRY_RUN" = true ]; then
                 log "[DRY-RUN] Would stop $container service"
