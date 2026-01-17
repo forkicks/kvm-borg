@@ -285,15 +285,15 @@ backup_vm_to_repo() {
     local block_disks=()
     local extra_files=()
 
-    # Load cached metadata
+    # Load cached metadata (filtering empty lines)
     if [[ -s "$vm_tmp_dir/disks.txt" ]]; then
-        mapfile -t disks < "$vm_tmp_dir/disks.txt"
+        mapfile -t disks < <(grep -v '^$' "$vm_tmp_dir/disks.txt")
     fi
     if [[ -s "$vm_tmp_dir/block_disks.txt" ]]; then
-        mapfile -t block_disks < "$vm_tmp_dir/block_disks.txt"
+        mapfile -t block_disks < <(grep -v '^$' "$vm_tmp_dir/block_disks.txt")
     fi
     if [[ -s "$vm_tmp_dir/extra_files.txt" ]]; then
-        mapfile -t extra_files < "$vm_tmp_dir/extra_files.txt"
+        mapfile -t extra_files < <(grep -v '^$' "$vm_tmp_dir/extra_files.txt")
     fi
 
     local archive_name="${vm}-$(get_compact_timestamp)"
@@ -314,9 +314,11 @@ backup_vm_to_repo() {
             log "[DRY-RUN] Would create archive $repo::$archive_name with:"
             log "[DRY-RUN]   XML: $xml_file"
             for d in "${disks[@]}"; do
+                [[ -z "$d" ]] && continue
                 log "[DRY-RUN]   Disk: $d"
             done
             for f in "${extra_files[@]}"; do
+                [[ -z "$f" ]] && continue
                 log "[DRY-RUN]   Extra: $f"
             done
         else
@@ -336,6 +338,8 @@ backup_vm_to_repo() {
     fi
 
     for disk in "${block_disks[@]}"; do
+        # Skip empty entries
+        [[ -z "$disk" ]] && continue
         log "Backing up block device: $disk"
         backup_physical_disk "$disk" "$vm" "$repo"
     done
