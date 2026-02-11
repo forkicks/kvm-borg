@@ -369,6 +369,10 @@ fi
 
 log "System backup process finished successfully"
 
+# Restore services now that filesystem backup is done - no need to keep them
+# down during VM backups which can take a long time
+restore_services
+
 # Run VM backup if --with-vms flag was provided
 if [ "$WITH_VMS" = true ]; then
     log "Starting VM backups (--with-vms option enabled)..."
